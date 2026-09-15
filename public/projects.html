@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HyperFrames Studio — Projects</title>
+    <style>
+      :root {
+        --bg: #0a0a0a; --card: #141414; --border: #262626;
+        --fg: #e5e5e5; --muted: #7a7a7a; --accent: #22c55e;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: var(--bg); color: var(--fg); min-height: 100vh; padding: 56px 32px;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      header { max-width: 1280px; margin: 0 auto 34px; display: flex; align-items: center; gap: 14px; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+      h1 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+      .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+      .grid { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; }
+      a.card {
+        display: block; background: var(--card); border: 1px solid var(--border);
+        border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit;
+        transition: border-color .15s ease, transform .15s ease;
+      }
+      a.card:hover { border-color: #454545; transform: translateY(-3px); }
+      .thumb { aspect-ratio: 16 / 9; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+      .meta { padding: 15px 17px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .name { font-size: 14px; font-weight: 500; }
+      .open { color: var(--muted); font-size: 12px; white-space: nowrap; }
+      a.card:hover .open { color: var(--accent); }
+      .err { max-width: 1280px; margin: 0 auto; color: #f87171; font-size: 13px; }
+      .empty { max-width: 1280px; margin: 0 auto; color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="dot"></span>
+      <div>
+        <h1>HyperFrames Studio</h1>
+        <div class="sub" id="count">Cargando proyectos…</div>
+      </div>
+    </header>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" hidden>
+      No hay proyectos todavía. Crea uno con la tool <code>write_project_file</code> del MCP
+      (o con <code>create_project</code>) y recarga esta página.
+    </div>
+    <div class="err" id="err"></div>
+
+    <script>
+      // Frame used for the preview thumbnail (seconds into each composition).
+      const T = 2.4;
+
+      const esc = (s) =>
+        String(s).replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      fetch("/api/projects", { headers: { accept: "application/json" } })
+        .then((r) => r.json())
+        .then((d) => {
+          const ps = (d.projects || []).slice().sort((a, b) =>
+            String(a.id).localeCompare(String(b.id))
+          );
+          document.getElementById("count").textContent =
+            ps.length + " proyecto" + (ps.length === 1 ? "" : "s");
+          if (!ps.length) {
+            document.getElementById("empty").hidden = false;
+            return;
+          }
+          const id = (p) => encodeURIComponent(p.id);
+          document.getElementById("grid").innerHTML = ps
+            .map(
+              (p) => `
+            <a class="card" href="/#project/${id(p)}">
+              <div class="thumb">
+                <img loading="lazy" alt="${esc(p.title || p.id)}"
+                     src="/api/projects/${id(p)}/thumbnail/index.html?t=${T}&format=png"
+                     onerror="this.closest('.thumb').style.background='#111';this.remove()" />
+              </div>
+              <div class="meta">
+                <span class="name">${esc(p.title || p.id)}</span>
+                <span class="open">Abrir →</span>
+              </div>
+            </a>`
+            )
+            .join("");
+        })
+        .catch((e) => {
+          document.getElementById("err").textContent = "Error al cargar proyectos: " + e.message;
+        });
+    </script>
+  </body>
+</html>

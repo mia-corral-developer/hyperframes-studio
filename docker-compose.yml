@@ -12,6 +12,14 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+    environment:
+      # Single source of truth: the SAME volume the MCP container writes to.
+      # Projects authored/rendered through the MCP show up in the Studio, and
+      # vice versa. The volume name is the one Docker created for the MCP
+      # compose project (code_hf-mcp-projects).
+      HF_PROJECTS_DIR: /app/hf/packages/studio/data/projects
+    volumes:
+      - hf-projects:/app/hf/packages/studio/data/projects
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
@@ -33,6 +41,13 @@ services:
       - traefik.http.services.hf-studio-websecure.loadbalancer.server.port=5190
     networks:
       - dokploy-network
+
+volumes:
+  # Owned by the MCP compose project; both containers mount it so the Studio
+  # sees every project the MCP creates/renders.
+  hf-projects:
+    external: true
+    name: code_hf-mcp-projects
 
 networks:
   dokploy-network:

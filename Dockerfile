@@ -75,6 +75,14 @@ RUN mkdir -p packages/studio/data/projects \
     && cp -r registry/examples/kinetic-type packages/studio/data/projects/kinetic-type \
     && cp -r registry/examples/product-promo packages/studio/data/projects/product-promo
 
+# ─ Project gallery launcher (/projects.html) ────────────────────────────────
+# Upstream ships no project picker: the Studio opens a single project chosen by
+# the URL hash (#project/<id>). This static page lists every project via
+# GET /api/projects with a live thumbnail and links into the editor. It lives in
+# Vite's publicDir, so it is served at /projects.html without shadowing the SPA
+# index.html. Baked into the image so it survives Dokploy redeploys.
+COPY public/projects.html /app/hf/packages/studio/public/projects.html
+
 # ── Runtime config ───────────────────────────────────────────────────────────
 # Preview host → bind all interfaces (otherwise 127.0.0.1 only).
 # allowedHosts → Vite 6 blocks requests whose Host header isn't allowed; behind
