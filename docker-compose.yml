@@ -1,0 +1,32 @@
+services:
+  hyperframes-studio:
+    build:
+      context: https://github.com/mia-corral-developer/hyperframes-studio.git#main
+      dockerfile: Dockerfile
+    image: hyperframes-studio:latest
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+
+      # HTTP → redirect to HTTPS
+      - traefik.http.routers.hf-studio-web.rule=Host(`hyperframes.lab.whitelabel.lat`)
+      - traefik.http.routers.hf-studio-web.entrypoints=web
+      - traefik.http.routers.hf-studio-web.service=hf-studio-web
+      - traefik.http.routers.hf-studio-web.middlewares=redirect-to-https@file
+
+      # HTTPS
+      - traefik.http.routers.hf-studio-websecure.rule=Host(`hyperframes.lab.whitelabel.lat`)
+      - traefik.http.routers.hf-studio-websecure.entrypoints=websecure
+      - traefik.http.routers.hf-studio-websecure.service=hf-studio-websecure
+      - traefik.http.routers.hf-studio-websecure.tls.certresolver=letsencrypt
+
+      # Container port
+      - traefik.http.services.hf-studio-web.loadbalancer.server.port=5190
+      - traefik.http.services.hf-studio-websecure.loadbalancer.server.port=5190
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
