@@ -5,6 +5,13 @@ services:
       dockerfile: Dockerfile
     image: hyperframes-studio:latest
     restart: unless-stopped
+    # Vite's file watcher (chokidar) exhausts fds/inotify; a small nofile limit
+    # made the server crash with EMFILE. Also raise the HOST limits once:
+    #   sysctl -w fs.inotify.max_user_instances=2048 fs.inotify.max_user_watches=1048576
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
